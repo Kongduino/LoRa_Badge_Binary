@@ -47,4 +47,4 @@ etc, etc... Yours to decide.
 
 Make a JSON file that will be loaded by the Xojo app, and a `.h` file that will be loaded by the Arduino app. OR, maybe, write them to the EEPROM too.
 
-~[Screenshot](Screenshot.png)
+![Screenshot](./Screenshot.png)
