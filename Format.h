@@ -30,6 +30,7 @@ char myName[NAMElen + 1];
 #define fullSetLen (NAMElen + UUIDlen + 4)
 char fullSet[fullSetLen]; // MAGIC = 4 bytes
 char buffer[256];
+#define MAX_UUID_NUMBER 1024
 
 void showData() {
   Serial.printf(" . Name: %s\n . UUID: %s vs %04x\n", myName, myPlainTextUUID, myIntUUID);
@@ -114,7 +115,7 @@ vector<uint32_t> receivedMessageUUID;
 string lookupTransmitters(uint8_t number) {
   // Check whether we have seen this  transmitter ID (WE SHOULD!)
   for (unsigned i = 0; i < transmittersIndex.size(); i++) {
-    if (transmittersIndex[i] = number) return transmitters[i];
+    if (transmittersIndex[i] == number) return transmitters[i];
     // return the name
   }
   return (string)"?"; // Ouatte Zeu Fouc
@@ -123,10 +124,17 @@ string lookupTransmitters(uint8_t number) {
 bool lookupMessageUUID(uint32_t number) {
   // Check whether we have seen this message UUID before
   for (unsigned i = 0; i < receivedMessageUUID.size(); i++) {
-    if (receivedMessageUUID[i] = number) return true;
+    if (receivedMessageUUID[i] == number) return true;
   }
   // No? Cool. Now let's add it to the list.
   receivedMessageUUID.push_back(number);
+  Serial.printf("Adding %08x to the list\n", number);
+  // Do we have too many? If so, let's prune a little...
+  if (receivedMessageUUID.size() > MAX_UUID_NUMBER) {
+    // let's remove the 16 oldest message UUIDs
+    receivedMessageUUID.erase(receivedMessageUUID.begin(), receivedMessageUUID.begin() + 16);
+    Serial.printf("Pruning oldest 16 message UUIDs. We now have %d.\n", receivedMessageUUID.size());
+  }
   // And return false to say it's a new one.
   return false;
 }

@@ -133,5 +133,16 @@ void setup() {
   doLoRaSetup();
 }
 
+uint8_t greenStatus = 255, blueStatus = 0;
+int8_t greenIncrement = -1, blueIncrement = -1;
 void loop() {
+  //  analogWrite(LED_GREEN, greenStatus);
+  //  analogWrite(LED_BLUE, blueStatus);
+  //  if (greenStatus == 0) greenIncrement = 1;
+  //  else if (greenStatus == 255) greenIncrement = -1;
+  //  greenStatus += greenIncrement;
+  //  if (blueStatus == 0) blueIncrement = 1;
+  //  else if (blueStatus == 255) blueIncrement = -1;
+  //  blueStatus += blueIncrement;
+  //  delay(5);
 }

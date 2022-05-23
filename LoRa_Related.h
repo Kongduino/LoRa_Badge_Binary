@@ -179,7 +179,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     delay(500);
     digitalWrite(LED_BLUE, LOW);
     digitalWrite(LED_GREEN, HIGH);
-    Serial.printf(" --> Not for me! [%04x vs %04x]", myIntUUID, To);
+    Serial.printf(" --> Not for me! [%04x vs %04x]\n", myIntUUID, To);
     // Have we seen this message before?
     if (!lookupMessageUUID(msgUUID)) {
       if (ResendCount < RESEND_LIMIT) {
