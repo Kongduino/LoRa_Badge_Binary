@@ -6,7 +6,7 @@ Let's separate the setup of the badges from their main app. Make an app to progr
 
 ```
 /name xxxxxxxx	--> Initialize with a name xxxxxxx and a new UUID
-/uuid?			--> read back name & UUID
+/name?			--> read back name & UUID
 /read			--> read back name & UUID
 ```
 
