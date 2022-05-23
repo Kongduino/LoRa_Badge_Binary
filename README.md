@@ -14,7 +14,7 @@ See [LoRa_Badge_Format](https://github.com/Kongduino/LoRa_Badge_Format)
 
 ## Badge Message Format
 
-Binary, LPP style
+Binary, LPP style, but without field markers. The idea is to have a fixed format that saves as mich space as possible.
 
 ### Contents
 
