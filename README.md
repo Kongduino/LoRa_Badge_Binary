@@ -10,6 +10,8 @@ Let's separate the setup of the badges from their main app. Make an app to progr
 /read			--> read back name & UUID
 ```
 
+See [LoRa_Badge_Format](https://github.com/Kongduino/LoRa_Badge_Format)
+
 ## Badge Message Format
 
 Binary, LPP style
