@@ -29,11 +29,7 @@ char myPlainTextUUID[UUIDlen * 2 + 2];
 char myName[NAMElen + 1];
 #define fullSetLen (NAMElen + UUIDlen + 4)
 char fullSet[fullSetLen]; // MAGIC = 4 bytes
-
-void hexDump(char *, uint16_t);
-void readEEPROM();
-void showData();
-void initEEPROM(char *);
+char buffer[256];
 
 void showData() {
   Serial.printf(" . Name: %s\n . UUID: %s vs %04x\n", myName, myPlainTextUUID, myIntUUID);
@@ -113,6 +109,27 @@ void hexDump(char *buf, uint16_t len) {
 vector<string> precanned;
 vector<string> transmitters;
 vector<uint8_t> transmittersIndex;
+vector<uint32_t> receivedMessageUUID;
+
+string lookupTransmitters(uint8_t number) {
+  // Check whether we have seen this  transmitter ID (WE SHOULD!)
+  for (unsigned i = 0; i < transmittersIndex.size(); i++) {
+    if (transmittersIndex[i] = number) return transmitters[i];
+    // return the name
+  }
+  return (string)"?"; // Ouatte Zeu Fouc
+}
+
+bool lookupMessageUUID(uint32_t number) {
+  // Check whether we have seen this message UUID before
+  for (unsigned i = 0; i < receivedMessageUUID.size(); i++) {
+    if (receivedMessageUUID[i] = number) return true;
+  }
+  // No? Cool. Now let's add it to the list.
+  receivedMessageUUID.push_back(number);
+  // And return false to say it's a new one.
+  return false;
+}
 
 void initVectors() {
   precanned.push_back("Call the office");
