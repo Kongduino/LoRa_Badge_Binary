@@ -146,7 +146,7 @@ void initVectors() {
   transmitters.push_back("Yannick");
   transmitters.push_back("Albert");
   transmitters.push_back("Toto");
-  transmittersIndex.push_back(0xde);
-  transmittersIndex.push_back(0xca);
-  transmittersIndex.push_back(0xfb);
+  transmittersIndex.push_back(0x01);
+  transmittersIndex.push_back(0x02);
+  transmittersIndex.push_back(0x03);
 }

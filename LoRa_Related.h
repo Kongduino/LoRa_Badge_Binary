@@ -75,6 +75,12 @@ void OnRxError(void) {
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
   // Read fixed data
   uint32_t msgUUID = payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3];
+  if (lookupMessageUUID(msgUUID)) {
+    Serial.printf("We've seen this message, UUID %04x, before. Pass...\n", msgUUID);
+    // No sense doing anything with that. Leave
+    Radio.Rx(RX_TIMEOUT_VALUE);
+    return;
+  }
   char From = payload[4];
   string FromName = lookupTransmitters(From);
   uint16_t To = payload[5] << 8 | payload[6];
@@ -181,32 +187,30 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     digitalWrite(LED_GREEN, HIGH);
     Serial.printf(" --> Not for me! [%04x vs %04x]\n", myIntUUID, To);
     // Have we seen this message before?
-    if (!lookupMessageUUID(msgUUID)) {
-      if (ResendCount < RESEND_LIMIT) {
-        // Should we repeat the message?
-        // was the message forwarded less than RESEND_LIMIT times?
-        if (rssi < RSSI_THRESHOLD || snr < SNR_THRESHOLD) {
-          // Is the message signal weak? Yes --> forward
-          // Turn on Blue LED. It will be turned off in the Tx callbacks
-          digitalWrite(LED_BLUE, HIGH);
-          digitalWrite(LED_GREEN, LOW);
-          // Copy the payload to TxdBuffer and set the length
-          // This will be used by OnCadDone
-          memcpy(TxdBuffer, payload, size);
-          TxdLength = size;
-          // ResendCount = payload[7]; --> Increment the resend count
-          TxdBuffer[7] += 1;
-          Serial.printf("Forwarding: RSSI and/or SNR too low\n");
-          Radio.Standby();
-          delay(500);
-          Radio.SetCadParams(LORA_CAD_08_SYMBOL, LORA_SPREADING_FACTOR + 13, 10, LORA_CAD_ONLY, 0);
-          Radio.StartCad();
-        }
+    if (ResendCount < RESEND_LIMIT) {
+      // Should we repeat the message?
+      // was the message forwarded less than RESEND_LIMIT times?
+      if (rssi < RSSI_THRESHOLD || snr < SNR_THRESHOLD) {
+        // Is the message signal weak? Yes --> forward
+        // Turn on Blue LED. It will be turned off in the Tx callbacks
+        digitalWrite(LED_BLUE, HIGH);
+        digitalWrite(LED_GREEN, LOW);
+        // Copy the payload to TxdBuffer and set the length
+        // This will be used by OnCadDone
+        memcpy(TxdBuffer, payload, size);
+        TxdLength = size;
+        // ResendCount = payload[7]; --> Increment the resend count
+        TxdBuffer[7] += 1;
+        Serial.printf("Forwarding: RSSI and/or SNR too low\n");
+        Radio.Standby();
+        delay(500);
+        Radio.SetCadParams(LORA_CAD_08_SYMBOL, LORA_SPREADING_FACTOR + 13, 10, LORA_CAD_ONLY, 0);
+        Radio.StartCad();
       } else {
-        Serial.println("Cannot forward any longer, limit reached.");
+        Serial.println("Signal is strong enough. Skipping forwarding...");
       }
     } else {
-      Serial.println("We've seen this message before!");
+      Serial.println("Cannot forward any longer, limit reached.");
     }
   }
   digitalWrite(LED_GREEN, LOW); // Turn off Green LED
