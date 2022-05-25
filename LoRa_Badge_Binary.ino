@@ -28,6 +28,9 @@ void hexDump(char *, uint16_t);
 void readEEPROM();
 void showData();
 void initEEPROM(char *);
+void initReadVBAT(void);
+uint8_t readBatt(void);
+uint8_t lorawanBattLevel(void);
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_EPD.h>
@@ -35,9 +38,12 @@ void initEEPROM(char *);
 #include "Bloutouffe.h"
 #include "images.h"
 #include "LoRa_Related.h"
+#include "Battery.h"
 
 QRCode qrcode;
 uint8_t version = 3;
+uint32_t lastBatteryCheck = millis();
+uint32_t BatteryCheckDelay = 1000;
 
 void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
   display.clearBuffer();
@@ -130,14 +136,34 @@ void setup() {
   sprintf(buffer, "UUID: %s", myPlainTextUUID);
   drawTextXY(125, 60, buffer, EPD_BLACK, 2);
   drawTextXY(125, 80, myName, EPD_BLACK, 2);
-  display.display(true);
   doLoRaSetup();
   setupBLE();
+  initReadVBAT();
+  uint8_t batlvl, pct;
+  batlvl = readBatt();
+  delay(100);
+  batlvl = readBatt();
+  if (batlvl < 20) pct = 0;
+  else if (batlvl < 40) pct = 1;
+  else if (batlvl < 60) pct = 2;
+  else if (batlvl < 80) pct = 3;
+  else if (batlvl < 100) pct = 4;
+  else pct = 5;
+  sprintf(buffer, "LIPO = %02d%%\n", batlvl);
+  Serial.print(buffer);
+  display.drawBitmap(120, 0, epd_bitmap_allArray[pct], 50, 20, EPD_BLACK);
+  display.display(true);
 }
 
 uint8_t greenStatus = 255, blueStatus = 0;
 int8_t greenIncrement = -1, blueIncrement = -1;
 void loop() {
+  if (millis() - lastBatteryCheck > BatteryCheckDelay) {
+    sprintf(buffer, "LIPO = %02d%%\n", readBatt());
+    Serial.print(buffer);
+    if (bleConnected) g_BleUart.print(buffer);
+    lastBatteryCheck = millis();
+  }
   //  analogWrite(LED_GREEN, greenStatus);
   //  analogWrite(LED_BLUE, blueStatus);
   //  if (greenStatus == 0) greenIncrement = 1;

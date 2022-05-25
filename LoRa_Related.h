@@ -191,6 +191,18 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
       }
     }
     // Finally update the EPD
+    uint8_t batlvl, pct;
+    batlvl = readBatt();
+    if (batlvl < 20) pct = 0;
+    else if (batlvl < 40) pct = 1;
+    else if (batlvl < 60) pct = 2;
+    else if (batlvl < 80) pct = 3;
+    else if (batlvl < 100) pct = 4;
+    else pct = 5;
+    sprintf(buffer, "LIPO = %02d%%\n", batlvl);
+    Serial.print(buffer);
+    if (bleConnected) g_BleUart.print(buffer);
+    display.drawBitmap(120, 0, epd_bitmap_allArray[pct], 50, 20, EPD_BLACK);
     display.display(true);
   } else {
     // Not for us!
