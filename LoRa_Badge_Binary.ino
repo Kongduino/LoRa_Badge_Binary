@@ -126,7 +126,7 @@ void setup() {
   uint8_t ln = strlen(buffer);
   hexDump(buffer, ln);
   showQRCode(buffer);
-  display.drawBitmap(192, 0, rak_img, 156, 50, EPD_BLACK);
+  display.drawBitmap(196, 0, rak_img, 150, 56, EPD_BLACK);
   sprintf(buffer, "UUID: %s", myPlainTextUUID);
   drawTextXY(125, 60, buffer, EPD_BLACK, 2);
   drawTextXY(125, 80, myName, EPD_BLACK, 2);
