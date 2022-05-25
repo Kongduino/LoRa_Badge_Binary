@@ -31,8 +31,9 @@ void initEEPROM(char *);
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_EPD.h>
-#include "images.h"
 #include "Format.h"
+#include "Bloutouffe.h"
+#include "images.h"
 #include "LoRa_Related.h"
 
 QRCode qrcode;
@@ -131,6 +132,7 @@ void setup() {
   drawTextXY(125, 80, myName, EPD_BLACK, 2);
   display.display(true);
   doLoRaSetup();
+  setupBLE();
 }
 
 uint8_t greenStatus = 255, blueStatus = 0;
@@ -145,4 +147,8 @@ void loop() {
   //  else if (blueStatus == 255) blueIncrement = -1;
   //  blueStatus += blueIncrement;
   //  delay(5);
+  // Forward anything received from BLE UART to USB Serial
+  if (g_BleUart.available()) {
+    Serial.print(g_BleUart.readString());
+  }
 }
