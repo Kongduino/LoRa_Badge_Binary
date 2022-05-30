@@ -43,7 +43,7 @@ uint8_t lorawanBattLevel(void);
 QRCode qrcode;
 uint8_t version = 3;
 uint32_t lastBatteryCheck = millis();
-uint32_t BatteryCheckDelay = 1000;
+uint32_t BatteryCheckDelay = 60000;
 
 void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
   display.clearBuffer();
