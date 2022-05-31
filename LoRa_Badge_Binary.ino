@@ -44,6 +44,7 @@ QRCode qrcode;
 uint8_t version = 3;
 uint32_t lastBatteryCheck = millis();
 uint32_t BatteryCheckDelay = 60000;
+#define DEBUG 1
 #define SLEEP_MODE 1
 #ifdef SLEEP_MODE
 // Time the device is sleeping in milliseconds = 10 * 1000 milliseconds
@@ -80,22 +81,30 @@ void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
   uint16_t qrc_sz = qrc_wd * qrc_hg, ix = 0;
   unsigned char qrc[qrc_sz];
   // Text version: look at the Serial Monitor :-)
-  if (showASCII) Serial.print("\n\n\n\n");
+  if (showASCII) {
+    if (DEBUG > 0) Serial.print("\n\n\n\n");
+  }
   for (uint8_t y = 0; y < myWidth; y++) {
     // Left quiet zone
-    Serial.print("        ");
+    if (DEBUG > 0) Serial.print("        ");
     // Each horizontal module
     uint16_t px = ix;
     for (uint8_t x = 0; x < myWidth; x += 2) {
       // Print each module (UTF-8 \u2588 is a solid block)
-      if (showASCII) Serial.print(qrcode_getModule(&qrcode, x, y) ? "\u2588\u2588" : "  ");
+      if (showASCII) {
+        if (DEBUG > 0) Serial.print(qrcode_getModule(&qrcode, x, y) ? "\u2588\u2588" : "  ");
+      }
       uint8_t c = 0;
       if (qrcode_getModule(&qrcode, x, y)) c = 0xF0;
       if (x + 1 < myWidth && qrcode_getModule(&qrcode, x + 1, y)) {
         c += 0x0F;
-        if (showASCII) Serial.print("\u2588\u2588");
+        if (showASCII) {
+          if (DEBUG > 0) Serial.print("\u2588\u2588");
+        }
       } else {
-        if (showASCII) Serial.print("  ");
+        if (showASCII) {
+          if (DEBUG > 0) Serial.print("  ");
+        }
       }
       qrc[ix++] = c;
     }
@@ -108,10 +117,14 @@ void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
     memcpy(qrc + ix, qrc + px, qrc_wd);
     px = ix;
     ix += qrc_wd;
-    if (showASCII) Serial.print("\n");
+    if (showASCII) {
+      if (DEBUG > 0) Serial.print("\n");
+    }
   }
   // Bottom quiet zone
-  if (showASCII) Serial.print("\n\n\n\n");
+  if (showASCII) {
+    if (DEBUG > 0) Serial.print("\n\n\n\n");
+  }
   display.drawBitmap(0, 0, qrc, qrc_wd * 8, qrc_hg, EPD_BLACK);
   if (refresh) display.display(true);
 }
@@ -130,26 +143,26 @@ void setup() {
   }
   Serial.begin(115200);
   delay(300);
-  Serial.println(F("====================================="));
-  Serial.println("        QR Code EPD LoRa Test");
-  Serial.println(F("====================================="));
-  Serial.println("          Turning on modules");
+  if (DEBUG > 0) Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println("        QR Code EPD LoRa Test");
+  if (DEBUG > 0) Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println("          Turning on modules");
   pinMode(WB_IO2, INPUT_PULLUP); // EPD
   digitalWrite(WB_IO2, HIGH);
   delay(300);
-  Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println(F("====================================="));
   if (i2ceeprom.begin(EEPROM_ADDR)) {
     // you can put a different I2C address here, e.g. begin(0x51);
-    Serial.println("Found I2C EEPROM");
+    if (DEBUG > 0) Serial.println("Found I2C EEPROM");
   } else {
-    Serial.println("I2C EEPROM not identified ... check your connections?\r\n");
+    if (DEBUG > 0) Serial.println("I2C EEPROM not identified ... check your connections?\r\n");
     while (1) {
       delay(10);
     }
   }
   readEEPROM();
   initVectors();
-  Serial.println("Epaper-QRCode test\n======================");
+  if (DEBUG > 0) Serial.println("Epaper-QRCode test\n======================");
   display.begin();
   memset(buffer, 0, 32);
   sprintf(buffer, "UUID: %s, Name: %s", myPlainTextUUID, myName);
@@ -174,7 +187,7 @@ void setup() {
   else if (batlvl < 100) pct = 4;
   else pct = 5;
   sprintf(buffer, "LIPO = %02d%%\n", batlvl);
-  Serial.print(buffer);
+  if (DEBUG > 0) Serial.print(buffer);
   display.drawBitmap(120, 0, epd_bitmap_allArray[pct], 50, 20, EPD_BLACK);
   display.display(true);
 #ifdef SLEEP_MODE
@@ -204,19 +217,19 @@ void loop() {
     switch (eventType) {
       case TIMER_WAKEUP:
         // Wakeup reason is timer
-        Serial.println("Timer wakeup.");
+        if (DEBUG > 0) Serial.println("Timer wakeup.");
         /// \todo read sensor or whatever you need to do frequently
         // Send the data package
         break;
       default:
-        Serial.println("This should never happen ;-)");
+        if (DEBUG > 0) Serial.println("This should never happen ;-)");
         break;
     }
   }
 #endif
   if (millis() - lastBatteryCheck > BatteryCheckDelay) {
     sprintf(buffer, "LIPO = %02d%%\n", readBatt());
-    Serial.print(buffer);
+    if (DEBUG > 0) Serial.print(buffer);
     if (bleConnected) g_BleUart.print(buffer);
     lastBatteryCheck = millis();
   }
@@ -231,7 +244,7 @@ void loop() {
   //  delay(5);
   // Forward anything received from BLE UART to USB Serial
   if (g_BleUart.available()) {
-    Serial.print(g_BleUart.readString());
+    if (DEBUG > 0) Serial.print(g_BleUart.readString());
   }
 #ifdef SLEEP_MODE
   digitalWrite(LED_BLUE, HIGH);
@@ -239,7 +252,7 @@ void loop() {
   delay(5000);
   // Switch off blue LED to show we are going to slep
   digitalWrite(LED_BLUE, LOW);
-  Serial.print("Going to sleep... ");
+  if (DEBUG > 0) Serial.print("Going to sleep... ");
   Bluefruit._stopConnLed();
   // Go back to sleep
   xSemaphoreTake(taskEvent, 10);

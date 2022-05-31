@@ -14,9 +14,9 @@ void setupBLE() {
   // Config the peripheral connection with maximum bandwidth
   // more SRAM required by SoftDevice
   // Note: All config***() function must be called before begin()
-  Serial.println(F("====================================="));
-  Serial.println(F("             LoRa Setup"));
-  Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println(F("             BLE Setup"));
+  if (DEBUG > 0) Serial.println(F("====================================="));
   Bluefruit.configPrphBandwidth(BANDWIDTH_MAX);
   Bluefruit.configPrphConn(92, BLE_GAP_EVENT_LENGTH_MIN, 16, 16);
   Bluefruit.begin(1, 0);
@@ -25,7 +25,7 @@ void setupBLE() {
   // Set the BLE device name
   char bleName[33] = {0};
   sprintf(bleName, "Badge_%s", myPlainTextUUID);
-  Serial.printf("Setting name as %s\n", bleName);
+  if (DEBUG > 0) Serial.printf("Setting name as %s\n", bleName);
   Bluefruit.setName(bleName);
   Bluefruit.Periph.setConnectCallback(ble_connect_callback);
   Bluefruit.Periph.setDisconnectCallback(ble_disconnect_callback);
@@ -59,7 +59,7 @@ void setupBLE() {
 void ble_connect_callback(uint16_t conn_handle) {
   (void)conn_handle;
   bleConnected = true;
-  Serial.println("BLE client connected");
+  if (DEBUG > 0) Serial.println("BLE client connected");
 }
 
 /**
@@ -71,5 +71,5 @@ void ble_disconnect_callback(uint16_t conn_handle, uint8_t reason) {
   (void)conn_handle;
   (void)reason;
   bleConnected = false;
-  Serial.println("BLE client disconnected");
+  if (DEBUG > 0) Serial.println("BLE client disconnected");
 }

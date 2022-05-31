@@ -33,14 +33,14 @@ char buffer[256];
 #define MAX_UUID_NUMBER 1024
 
 void showData() {
-  Serial.printf(" . Name: %s\n . UUID: %s vs %04x\n", myName, myPlainTextUUID, myIntUUID);
+  if (DEBUG > 0) Serial.printf(" . Name: %s\n . UUID: %s vs %04x\n", myName, myPlainTextUUID, myIntUUID);
 }
 
 void readEEPROM() {
   memset(fullSet, 0, fullSetLen);
   uint16_t addr = 0x0000;
   bool rslt = i2ceeprom.read(addr, (uint8_t*)fullSet, fullSetLen);
-  Serial.printf(" . Read %d bytes\n", fullSetLen);
+  if (DEBUG > 0) Serial.printf(" . Read %d bytes\n", fullSetLen);
   memset(myName, 0, NAMElen + 1);
   memcpy(myName, fullSet + 4 + UUIDlen, NAMElen);
   memset(myPlainTextUUID, 0, UUIDlen);
@@ -58,9 +58,9 @@ void readEEPROM() {
     }
   }
   if (!correct) {
-    Serial.println(" . Incorrect format! Please init EEPROM with \"name xxxxx\"!");
+    if (DEBUG > 0) Serial.println(" . Incorrect format! Please init EEPROM with \"name xxxxx\"!");
     return;
-  } else Serial.println(" . MAGIC checks out.");
+  } else if (DEBUG > 0) Serial.println(" . MAGIC checks out.");
 }
 
 
@@ -128,12 +128,12 @@ bool lookupMessageUUID(uint32_t number) {
   }
   // No? Cool. Now let's add it to the list.
   receivedMessageUUID.push_back(number);
-  Serial.printf("Adding %08x to the list\n", number);
+  if (DEBUG > 0) Serial.printf("Adding %08x to the list\n", number);
   // Do we have too many? If so, let's prune a little...
   if (receivedMessageUUID.size() > MAX_UUID_NUMBER) {
     // let's remove the 16 oldest message UUIDs
     receivedMessageUUID.erase(receivedMessageUUID.begin(), receivedMessageUUID.begin() + 16);
-    Serial.printf("Pruning oldest 16 message UUIDs. We now have %d.\n", receivedMessageUUID.size());
+    if (DEBUG > 0) Serial.printf("Pruning oldest 16 message UUIDs. We now have %d.\n", receivedMessageUUID.size());
   }
   // And return false to say it's a new one.
   return false;

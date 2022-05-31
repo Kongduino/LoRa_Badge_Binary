@@ -22,14 +22,14 @@ char TxdBuffer[256];
 uint8_t TxdLength;
 
 void OnTxDone(void) {
-  Serial.println("OnTxDone");
+  if (DEBUG > 0) Serial.println("OnTxDone");
   Radio.Rx(RX_TIMEOUT_VALUE);
   digitalWrite(LED_BLUE, LOW);
   digitalWrite(LED_GREEN, HIGH);
 }
 
 void OnTxTimeout(void) {
-  Serial.println("OnTxTimeout");
+  if (DEBUG > 0) Serial.println("OnTxTimeout");
   Radio.Rx(RX_TIMEOUT_VALUE);
   digitalWrite(LED_BLUE, LOW);
   digitalWrite(LED_GREEN, HIGH);
@@ -37,14 +37,14 @@ void OnTxTimeout(void) {
 
 void OnCadDone(bool cadResult) {
   if (cadResult) {
-    Serial.print(F("CAD returned channel busy!ln"));
+    if (DEBUG > 0) Serial.print(F("CAD returned channel busy!ln"));
     if (bleConnected) g_BleUart.print("CAD returned channel busy!ln");
     Radio.Rx(RX_TIMEOUT_VALUE);
   } else {
-    Serial.print(F("CAD returned channel free: Sending..."));
+    if (DEBUG > 0) Serial.print(F("CAD returned channel free: Sending..."));
     if (bleConnected) g_BleUart.print("CAD returned channel free: Sending...");
     Radio.Send((uint8_t*)TxdBuffer, TxdLength);
-    Serial.println(F(" done!"));
+    if (DEBUG > 0) Serial.println(F(" done!"));
     if (bleConnected) g_BleUart.print(" done!");
   }
   digitalWrite(LED_BLUE, LOW);
@@ -53,14 +53,14 @@ void OnCadDone(bool cadResult) {
 
 void OnRxTimeout(void) {
   digitalWrite(LED_BLUE, HIGH);
-  Serial.println("\nRx Timeout!");
+  if (DEBUG > 0) Serial.println("\nRx Timeout!");
   delay(500);
   digitalWrite(LED_BLUE, LOW);
   Radio.Rx(RX_TIMEOUT_VALUE);
 }
 
 void OnRxError(void) {
-  Serial.println("Rx Error!");
+  if (DEBUG > 0) Serial.println("Rx Error!");
   digitalWrite(LED_BLUE, HIGH);
   delay(200);
   digitalWrite(LED_BLUE, LOW);
@@ -77,12 +77,12 @@ void OnRxError(void) {
 }
 
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
-  Serial.print(F("\nIncoming!\n"));
+  if (DEBUG > 0) Serial.print(F("\nIncoming!\n"));
   if (bleConnected) g_BleUart.print("\nIncoming!\n");
   // Read fixed data
   uint32_t msgUUID = payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3];
   if (lookupMessageUUID(msgUUID)) {
-    Serial.printf("We've seen this message, UUID %04x, before. Pass...\n", msgUUID);
+    if (DEBUG > 0) Serial.printf("We've seen this message, UUID %04x, before. Pass...\n", msgUUID);
     // No sense doing anything with that. Leave
     Radio.Rx(RX_TIMEOUT_VALUE);
     return;
@@ -97,10 +97,10 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
   // Display useful info
   char temp[64] = {0};
   sprintf(temp, "Message RSSI: %-d and SNR: %-d\n", rssi, snr);
-  Serial.print(temp);
+  if (DEBUG > 0) Serial.print(temp);
   if (bleConnected) g_BleUart.print(temp);
   sprintf(temp, "Message UUID: %08x\n", msgUUID);
-  Serial.print(temp);
+  if (DEBUG > 0) Serial.print(temp);
   if (bleConnected) g_BleUart.print(temp);
 
   if (To == 0) To = myIntUUID; // 0 = for everybody
@@ -109,7 +109,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
       temp, "From: %s [%02x] to %04x\nResend count %02x\nMessage type: %s\n",
       FromName.c_str(), From, To, ResendCount, MessageType == 0 ? "Canned" : "Custom"
     );
-    Serial.print(temp);
+    if (DEBUG > 0) Serial.print(temp);
     if (bleConnected) g_BleUart.print(temp);
     // You have a message! Blinky blinky!
     uint16_t py = 58;
@@ -123,7 +123,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     }
     if (MessageType == 0) {
       sprintf(temp, "Canned message #%d\n", precanNum);
-      Serial.print(temp);
+      if (DEBUG > 0) Serial.print(temp);
       // if (bleConnected) g_BleUart.print(temp);
       uint16_t msgLen = strlen((char*)precanned.at(precanNum).c_str());
       char precannedText[256]; // this could and should be smaller. Make sure in Xojo we keep that short.
@@ -141,7 +141,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
       } else {
         sprintf(buffer, "From: %s [%02x]: %s\n", FromName.c_str(), From, precannedText);
       }
-      Serial.print(buffer);
+      if (DEBUG > 0) Serial.print(buffer);
       if (bleConnected) g_BleUart.print(buffer);
       // show the QR code. Start with that: it erases the screen
       // do not update the display
@@ -149,7 +149,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
       // Show the logo
       display.drawBitmap(192, 0, rak_img, 150, 56, EPD_BLACK);
       // sprintf(temp, "Canned message: %d\n", precanNum);
-      // Serial.print(temp);
+      // if (DEBUG > 0) Serial.print(temp);
       // if (bleConnected) g_BleUart.print(temp);
       sprintf(buffer, "From: %s [%02x]", FromName.c_str(), From);
       drawTextXY(125, py, (char*)buffer, EPD_BLACK, 1);
@@ -172,7 +172,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
       // Copy the message to msg
       memcpy(msg, payload + 9, MessageType);
       sprintf(buffer, "From: %s [%02x]: %s", FromName.c_str(), From, msg);
-      Serial.println(buffer);
+      if (DEBUG > 0) Serial.println(buffer);
       if (bleConnected) g_BleUart.print(buffer);
       showQRCode(buffer, false, false);
       display.drawBitmap(192, 0, rak_img, 150, 56, EPD_BLACK);
@@ -201,7 +201,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     else if (batlvl < 100) pct = 4;
     else pct = 5;
     sprintf(buffer, "LIPO = %02d%%\n", batlvl);
-    Serial.print(buffer);
+    if (DEBUG > 0) Serial.print(buffer);
     if (bleConnected) g_BleUart.print(buffer);
     display.drawBitmap(120, 0, epd_bitmap_allArray[pct], 50, 20, EPD_BLACK);
     display.display(true);
@@ -213,7 +213,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
     digitalWrite(LED_BLUE, LOW);
     digitalWrite(LED_GREEN, HIGH);
     sprintf(temp, " --> Not for me! [%04x vs %04x]\n", myIntUUID, To);
-    Serial.print(temp);
+    if (DEBUG > 0) Serial.print(temp);
     if (bleConnected) g_BleUart.print(temp);
     // Have we seen this message before?
     if (ResendCount < RESEND_LIMIT) {
@@ -230,17 +230,17 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
         TxdLength = size;
         // ResendCount = payload[7]; --> Increment the resend count
         TxdBuffer[7] += 1;
-        Serial.printf("Forwarding: RSSI and/or SNR too low\n");
+        if (DEBUG > 0) Serial.printf("Forwarding: RSSI and/or SNR too low\n");
         Radio.Standby();
         delay(500);
         Radio.SetCadParams(LORA_CAD_08_SYMBOL, LORA_SPREADING_FACTOR + 13, 10, LORA_CAD_ONLY, 0);
         Radio.StartCad();
       } else {
-        Serial.println(F("Signal is strong enough. Skipping forwarding..."));
+        if (DEBUG > 0) Serial.println(F("Signal is strong enough. Skipping forwarding..."));
         if (bleConnected) g_BleUart.print("Signal is strong enough. Skipping forwarding...");
       }
     } else {
-      Serial.println(F("Cannot forward any longer, limit reached."));
+      if (DEBUG > 0) Serial.println(F("Cannot forward any longer, limit reached."));
       if (bleConnected) g_BleUart.print("Cannot forward any longer, limit reached.");
     }
   }
@@ -249,9 +249,9 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
 }
 
 void doLoRaSetup() {
-  Serial.println(F("====================================="));
-  Serial.println(F("             LoRa Setup"));
-  Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println(F("====================================="));
+  if (DEBUG > 0) Serial.println(F("             LoRa Setup"));
+  if (DEBUG > 0) Serial.println(F("====================================="));
   // Initialize the Radio callbacks
   lora_rak4630_init();
   RadioEvents.TxDone = OnTxDone;
@@ -264,11 +264,11 @@ void doLoRaSetup() {
   Radio.Init(&RadioEvents);
   // Set Radio channel
   Radio.SetChannel(RF_FREQUENCY);
-  Serial.println("Freq = " + String(RF_FREQUENCY / 1e6) + " MHz");
-  Serial.println("SF = " + String(LORA_SPREADING_FACTOR));
-  Serial.println("BW = " + String(LORA_BANDWIDTH) + " KHz");
-  Serial.println("CR = 4/" + String(LORA_CODINGRATE));
-  Serial.println("Tx Power = " + String(TX_OUTPUT_POWER));
+  if (DEBUG > 0) Serial.println("Freq = " + String(RF_FREQUENCY / 1e6) + " MHz");
+  if (DEBUG > 0) Serial.println("SF = " + String(LORA_SPREADING_FACTOR));
+  if (DEBUG > 0) Serial.println("BW = " + String(LORA_BANDWIDTH) + " KHz");
+  if (DEBUG > 0) Serial.println("CR = 4/" + String(LORA_CODINGRATE));
+  if (DEBUG > 0) Serial.println("Tx Power = " + String(TX_OUTPUT_POWER));
   // Set Radio TX configuration
   Radio.SetTxConfig(
     MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
@@ -281,6 +281,6 @@ void doLoRaSetup() {
     LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
     LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
     0, true, 0, 0, LORA_IQ_INVERSION_ON, true);
-  Serial.println("Starting Radio.Rx");
+  if (DEBUG > 0) Serial.println("Starting Radio.Rx");
   Radio.Rx(RX_TIMEOUT_VALUE);
 }
