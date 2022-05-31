@@ -200,7 +200,6 @@ void loop() {
     // Switch on blue LED to show we are awake
     digitalWrite(LED_BLUE, HIGH);
     digitalWrite(LED_BUILTIN, LOW);
-    delay(500); // Only so we can see the blue LED
     // Check the wake up reason
     switch (eventType) {
       case TIMER_WAKEUP:
@@ -235,11 +234,11 @@ void loop() {
     Serial.print(g_BleUart.readString());
   }
 #ifdef SLEEP_MODE
-  t0 = millis();
-  while (millis() - t0 < SLEEP_TIME) ;// taskYIELD();
+  digitalWrite(LED_BLUE, HIGH);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(5000);
   // Switch off blue LED to show we are going to slep
   digitalWrite(LED_BLUE, LOW);
-  digitalWrite(LED_BUILTIN, LOW);
   Serial.print("Going to sleep... ");
   Bluefruit._stopConnLed();
   // Go back to sleep
