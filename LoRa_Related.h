@@ -12,6 +12,7 @@ static RadioEvents_t RadioEvents;
 #define LORA_IQ_INVERSION_ON false
 #define RX_TIMEOUT_VALUE 100000
 #define TX_TIMEOUT_VALUE 3000
+#define PIN_LORA_DIO_1 47
 
 #define RSSI_THRESHOLD -85
 #define SNR_THRESHOLD 0

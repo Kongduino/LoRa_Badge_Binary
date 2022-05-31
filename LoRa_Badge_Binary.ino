@@ -44,6 +44,29 @@ QRCode qrcode;
 uint8_t version = 3;
 uint32_t lastBatteryCheck = millis();
 uint32_t BatteryCheckDelay = 60000;
+#define SLEEP_MODE 1
+#ifdef SLEEP_MODE
+// Time the device is sleeping in milliseconds = 10 * 1000 milliseconds
+#define SLEEP_TIME 10000
+#define TIMER_WAKEUP 1
+// Semaphore used by events to wake up loop task
+SemaphoreHandle_t taskEvent = NULL;
+// Timer to wakeup task frequently and send message
+SoftwareTimer taskWakeupTimer;
+uint8_t eventType = -1;
+/**
+   @brief Timer event that wakes up the loop task frequently
+   @param unused
+*/
+void periodicWakeup(TimerHandle_t unused) {
+  // Switch on blue LED to show we are awake
+  digitalWrite(LED_BLUE, HIGH);
+  eventType = TIMER_WAKEUP;
+  // Give the semaphore, so the loop task will wake up
+  xSemaphoreGiveFromISR(taskEvent, pdFALSE);
+}
+#endif
+
 
 void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
   display.clearBuffer();
@@ -94,6 +117,7 @@ void showQRCode(char *msg, bool showASCII = true, bool refresh = false) {
 }
 
 void setup() {
+  // Initialize the built in LED
   pinMode(LED_BLUE, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   time_t timeout = millis();
@@ -153,11 +177,44 @@ void setup() {
   Serial.print(buffer);
   display.drawBitmap(120, 0, epd_bitmap_allArray[pct], 50, 20, EPD_BLACK);
   display.display(true);
+#ifdef SLEEP_MODE
+  // Create the event semaphore
+  taskEvent = xSemaphoreCreateBinary();
+  // Initialize semaphore
+  xSemaphoreGive(taskEvent);
+  taskWakeupTimer.begin(SLEEP_TIME, periodicWakeup);
+  taskWakeupTimer.start();
+  digitalWrite(LED_BLUE, LOW);
+  digitalWrite(LED_GREEN, LOW);
+  Bluefruit._stopConnLed();
+  xSemaphoreTake(taskEvent, 10);
+#endif
 }
 
 uint8_t greenStatus = 255, blueStatus = 0;
 int8_t greenIncrement = -1, blueIncrement = -1;
 void loop() {
+#ifdef SLEEP_MODE
+  uint32_t t0 = millis();
+  if (xSemaphoreTake(taskEvent, portMAX_DELAY) == pdTRUE) {
+    // Switch on blue LED to show we are awake
+    digitalWrite(LED_BLUE, HIGH);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500); // Only so we can see the blue LED
+    // Check the wake up reason
+    switch (eventType) {
+      case TIMER_WAKEUP:
+        // Wakeup reason is timer
+        Serial.println("Timer wakeup.");
+        /// \todo read sensor or whatever you need to do frequently
+        // Send the data package
+        break;
+      default:
+        Serial.println("This should never happen ;-)");
+        break;
+    }
+  }
+#endif
   if (millis() - lastBatteryCheck > BatteryCheckDelay) {
     sprintf(buffer, "LIPO = %02d%%\n", readBatt());
     Serial.print(buffer);
@@ -177,4 +234,15 @@ void loop() {
   if (g_BleUart.available()) {
     Serial.print(g_BleUart.readString());
   }
+#ifdef SLEEP_MODE
+  t0 = millis();
+  while (millis() - t0 < SLEEP_TIME) ;// taskYIELD();
+  // Switch off blue LED to show we are going to slep
+  digitalWrite(LED_BLUE, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
+  Serial.print("Going to sleep... ");
+  Bluefruit._stopConnLed();
+  // Go back to sleep
+  xSemaphoreTake(taskEvent, 10);
+#endif
 }
